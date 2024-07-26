@@ -1,0 +1,14 @@
+[
+  {
+    "Type": "httplog",
+    "Label": "localhost",
+    "URL": "http://localhost:9000/debug/log/httplog",
+    "Duration": 180
+  },
+  {
+    "Type": "slowlog",
+    "Label": "localhost",
+    "URL": "http://localhost:9000/debug/log/slowlog",
+    "Duration": 180
+  }
+]
