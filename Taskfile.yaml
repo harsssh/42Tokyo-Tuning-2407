@@ -34,6 +34,8 @@ tasks:
 
   grade:
     desc: 採点を実行
+    deps:
+      - checkout
     cmds:
       - bash run.sh
 
