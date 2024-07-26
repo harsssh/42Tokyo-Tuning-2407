@@ -4,6 +4,8 @@ services:
     container_name: nginx-exporter
     restart: unless-stopped
     command: ["-nginx.scrape-uri=http://nginx/status"]
+    networks:
+      - webapp-network
 
   mysql-exporter:
     image: prom/mysqld-exporter
@@ -12,9 +14,11 @@ services:
     environment:
       MYSQLD_EXPORTER_PASSWORD: password
     command:
-      - "--mysqld.username=root"
-      - "--mysqld.address=mysql:3306"
+      - "--mysqld.username=user"
+      - "--mysqld.address=db:3306"
       - "--no-collect.slave_status"
+    networks:
+      - webapp-network
 
   node-exporter:
     image: quay.io/prometheus/node-exporter:latest
@@ -37,6 +41,8 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - webapp-network
 
   grafana:
     image: grafana/grafana
@@ -51,6 +57,12 @@ services:
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
       - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - webapp-network
 
 volumes:
   grafana-storage:
+
+networks:
+  webapp-network:
+    external: true
