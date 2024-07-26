@@ -42,8 +42,8 @@ pub async fn user_profile_image_handler(
     path: web::Path<i32>,
 ) -> Result<HttpResponse, AppError> {
     let user_id = path.into_inner();
-    let profile_image_byte = service.get_resized_profile_image_byte(user_id).await?;
+    let profile_image_path = service.get_resized_profile_image_path(user_id).await?;
     Ok(HttpResponse::Ok()
-        .content_type("image/png")
-        .body(profile_image_byte))
+        .append_header(("X-Accel-Redirect", profile_image_path))
+        .finish())
 }
