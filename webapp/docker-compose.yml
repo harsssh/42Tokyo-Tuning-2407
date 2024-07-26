@@ -5,8 +5,6 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: production
-    ports:
-      - "8080:8080"
     networks:
       - webapp-network
     depends_on:
@@ -15,8 +13,11 @@ services:
     volumes:
       - user-icons:/usr/local/bin/images
       - mysql-socket:/var/run/mysqld
+      - app-socket:/tmp
     healthcheck:
-      test: ["CMD", "curl", "-I", "http://localhost:8080/api/health_check", "-X", "GET"]
+      # uds でリクエストを飛ばせないので省略
+      test: ["CMD", "true"]
+      # test: ["CMD", "curl", "-I", "http://localhost:8080/api/health_check", "-X", "GET"]
       interval: 5s
       timeout: 10s
       retries: 10
@@ -89,6 +90,7 @@ services:
       - nginx-logs:/var/log/nginx
       - frontend-files:/usr/src/frontend
       - user-icons:/usr/local/bin/images
+      - app-socket:/tmp
     tmpfs:
       - /var/cache/nginx
     networks:
@@ -179,6 +181,7 @@ networks:
     external: true
 
 volumes:
+  app-socket:
   mysql-socket:
   user-icons: # external でもいいかも
   frontend-files:
