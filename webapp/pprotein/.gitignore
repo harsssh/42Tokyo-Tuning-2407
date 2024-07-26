@@ -4,4 +4,3 @@
 /dist/
 pprotein.db
 data/*.log
-data/*.json
