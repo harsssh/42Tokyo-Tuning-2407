@@ -47,7 +47,7 @@ tasks:
   grade:
     desc: デプロイ & 採点
     cmds:
-      - task: deploy
+      - task: checkout
       - bash run.sh
 
   restore:
