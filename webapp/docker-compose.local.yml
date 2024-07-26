@@ -57,6 +57,7 @@ services:
       - ./mysql/init:/docker-entrypoint-initdb.d
       - ./mysql/conf.d/my.local.cnf:/etc/mysql/conf.d/my.local.cnf
       - ./mysql/migration:/etc/mysql/migration
+      - mysql-logs:/var/log/mysql
     networks:
       - webapp-network
     healthcheck:
@@ -75,6 +76,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.local.conf:/etc/nginx/nginx.conf
+      - nginx-logs:/var/log/nginx
     networks:
       - webapp-network
     depends_on:
@@ -83,6 +85,26 @@ services:
       backend:
         condition: service_healthy
 
+  ### 以下、計測用 ###
+  pprotein:
+    container_name: pprotein
+    restart: unless-stopped
+    build:
+      context: pprotein
+      dockerfile: Dockerfile
+    ports:
+      - 9001:9000
+    volumes:
+      - ./pprotein/data:/opt/pprotein/data
+      - nginx-logs:/var/log/nginx
+      - mysql-logs:/var/log/mysq
+
 networks:
   webapp-network:
+    external: true
+
+volumes:
+  nginx-logs:
+    external: true
+  mysql-logs:
     external: true

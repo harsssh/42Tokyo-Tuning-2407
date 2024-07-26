@@ -31,8 +31,12 @@ tasks:
   bench:
     desc: ベンチマークを実行
     dir: benchmarker
+    vars:
+      # hostname が app- 始まりなら 9000, そうでなければ 9001
+      PPROTEIN_PORT:
+        sh: if [[ "$(hostname)" =~ ^app- ]]; then echo 9000; else echo 9001; fi
     cmds:
-      - curl localhost:9000/api/group/collect
+      - curl "localhost:{{.PPROTEIN_PORT}}/api/group/collect"
       - bash run_k6_and_score.sh
 
   grade:
