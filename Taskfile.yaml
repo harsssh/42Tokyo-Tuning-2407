@@ -60,12 +60,6 @@ tasks:
       - git reset --hard origin/{{.BRANCH}}
       - git switch -C {{.BRANCH}} origin/{{.BRANCH}}
 
-  log:
-    desc: コンテナのログを表示
-    dir: webapp
-    cmds:
-      - docker compose -f docker-compose.yml -f pprotein.compose.yaml -f grafana.compose.yaml logs -f
-
   ####################
   #     Internal     #
   ####################

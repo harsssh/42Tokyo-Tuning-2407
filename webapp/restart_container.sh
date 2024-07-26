@@ -17,16 +17,8 @@ if ! docker network ls | grep -q "$NETWORK_NAME"; then
 fi
 
 if [[ $HOSTNAME == app-* ]]; then
-    docker compose \
-        -f docker-compose.yml \
-        -f pprotein.compose.yaml \
-        -f grafana.compose.yaml \
-        down --volumes --rmi local
-	HOSTNAME=$HOSTNAME docker compose \
-        -f docker-compose.yml \
-        -f pprotein.compose.yaml \
-        -f grafana.compose.yaml \
-        up --build -d
+    docker compose down --volumes --rmi local
+	HOSTNAME=$HOSTNAME docker compose up --build -d
 else
     echo "ローカル環境でのコンテナ再起動を開始します。"
     # init.sh実行時には実行しない
