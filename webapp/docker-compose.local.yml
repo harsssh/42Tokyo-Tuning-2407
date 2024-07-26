@@ -2,12 +2,11 @@ services:
   backend:
     container_name: backend
     image: 42tokyo2407.azurecr.io/backend:development
-    environment:
-      DATABASE_URL: mysql://user:password@db/42Tokyo-db
     ports:
       - "18080:8080"
     volumes:
       - ./backend:/usr/src/backend
+      - mysql-socket:/var/run/mysqld
     networks:
       - webapp-network
     depends_on:
@@ -59,6 +58,7 @@ services:
       - ./mysql/conf.d/my.local.cnf:/etc/mysql/conf.d/my.local.cnf
       - ./mysql/migration:/etc/mysql/migration
       - mysql-logs:/var/log/mysql
+      - mysql-socket:/var/run/mysqld
     networks:
       - webapp-network
     healthcheck:
@@ -109,6 +109,7 @@ networks:
     external: true
 
 volumes:
+  mysql-socket:
   nginx-logs:
     external: true
   mysql-logs:
