@@ -1,5 +1,6 @@
 use sqlx::mysql::MySqlPool;
 
+// TODO: パラメータの最適値を考える
 pub async fn create_pool() -> MySqlPool {
     let options = sqlx::mysql::MySqlConnectOptions::new()
         .socket("/var/run/mysqld/mysqld.sock")

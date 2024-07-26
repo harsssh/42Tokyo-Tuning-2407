@@ -2,18 +2,19 @@ services:
   backend:
     container_name: backend
     image: 42tokyo2407.azurecr.io/backend:development
-    ports:
-      - "18080:8080"
     volumes:
       - ./backend:/usr/src/backend
       - mysql-socket:/var/run/mysqld
+      - app-socket:/tmp
     networks:
       - webapp-network
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-I", "http://localhost:18080/api/health_check", "-X", "GET"]
+      # uds を bind するようになったので、省略
+      test: ["CMD", "true"]
+      # test: ["CMD", "curl", "-I", "http://localhost:18080/api/health_check", "-X", "GET"]
       interval: 5s
       timeout: 10s
       retries: 10
@@ -80,6 +81,7 @@ services:
       - nginx-logs:/var/log/nginx
       - ./frontend/.next/static:/app/frontend/.next/static
       - ./backend/images:/usr/src/backend/images
+      - app-socket:/tmp
     tmpfs:
       - /var/cache/nginx
     networks:
@@ -109,6 +111,7 @@ networks:
     external: true
 
 volumes:
+  app-socket:
   mysql-socket:
   nginx-logs:
     external: true
