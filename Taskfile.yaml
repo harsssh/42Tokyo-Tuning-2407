@@ -12,13 +12,15 @@ tasks:
     desc: 本番環境のデプロイ
     deps:
       - checkout
+    dir: webapp
     cmds:
-      - bash webapp/restart_container.sh
+      - bash restart_container.sh
 
   local:
     desc: ローカル環境のデプロイ
+    dir: webapp
     cmds:
-      - bash webapp/restart_container.sh
+      - bash restart_container.sh
 
   test:
     desc: テストを実行
@@ -41,8 +43,9 @@ tasks:
 
   restore:
     desc: データベースのリストア & マイグレーション
+    dir: webapp
     cmds:
-      - bash webapp/restore_and_migration.sh
+      - bash restore_and_migration.sh
 
   ####################
   #     Utility      #
