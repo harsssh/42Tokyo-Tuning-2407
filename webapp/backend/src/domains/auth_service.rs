@@ -1,7 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::process::Command;
-
-use actix_web::web::Bytes;
 use log::error;
 
 use crate::errors::AppError;
@@ -153,7 +150,8 @@ impl<T: AuthRepository + std::fmt::Debug> AuthService<T> {
         Ok(())
     }
 
-    pub async fn get_resized_profile_image_byte(&self, user_id: i32) -> Result<Bytes, AppError> {
+    // NOTE: 戻り値は Path が適切かもしれない
+    pub async fn get_resized_profile_image_path(&self, user_id: i32) -> Result<String, AppError> {
         let profile_image_name = match self
             .repository
             .find_profile_image_name_by_user_id(user_id)
@@ -167,29 +165,32 @@ impl<T: AuthRepository + std::fmt::Debug> AuthService<T> {
         let path: PathBuf =
             Path::new(&format!("images/user_profile/{}", profile_image_name)).to_path_buf();
 
-        // TODO: コマンド使うのをやめる
-        // 画像をローカルに書き出して、NGINX で返すとより効率的
-        let output = Command::new("magick")
-            .arg(&path)
-            .arg("-resize")
-            .arg("500x500")
-            .arg("png:-")
-            .output()
-            .map_err(|e| {
-                error!("画像リサイズのコマンド実行に失敗しました: {:?}", e);
-                AppError::InternalServerError
-            })?;
+        let output_path = Path::new(&format!(
+            "images/user_profile/resized_{}",
+            profile_image_name
+        ))
+        .to_path_buf();
+        let redirect_path = format!("/protected/resized_{}", profile_image_name);
 
-        match output.status.success() {
-            true => Ok(Bytes::from(output.stdout)),
-            false => {
-                error!(
-                    "画像リサイズのコマンド実行に失敗しました: {:?}",
-                    String::from_utf8_lossy(&output.stderr)
-                );
-                Err(AppError::InternalServerError)
-            }
+        // 既にリサイズ済みの画像が存在するか確認
+        if output_path.exists() {
+            return Ok(redirect_path);
         }
+
+        let img = image::open(path).map_err(|e| {
+            error!("画像ファイルの読み込みに失敗しました: {:?}", e);
+            AppError::InternalServerError
+        })?;
+
+        let resized = img.resize(500, 500, image::imageops::FilterType::Lanczos3);
+
+        resized.save(&output_path).map_err(|e| {
+            error!("画像ファイルの保存に失敗しました: {:?}", e);
+            AppError::InternalServerError
+        })?;
+
+        // X-Accel-Redirect で画像を返すので、パスだけ渡す
+        Ok(redirect_path)
     }
 
     pub async fn validate_session(&self, session_token: &str) -> Result<bool, AppError> {

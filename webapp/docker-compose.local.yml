@@ -19,7 +19,8 @@ services:
       timeout: 10s
       retries: 10
       start_period: 600s
-    entrypoint: ["sh", "-c", "cargo watch -x run"]
+    # dev 環境での画像リサイズ時の再ビルドを防止する
+    entrypoint: ["sh", "-c", "cargo watch -x run --ignore images"]
 
   frontend:
     container_name: frontend
@@ -78,6 +79,7 @@ services:
       - ./nginx/nginx.local.conf:/etc/nginx/nginx.conf
       - nginx-logs:/var/log/nginx
       - ./frontend/.next/static:/app/frontend/.next/static
+      - ./backend/images:/usr/src/backend/images
     tmpfs:
       - /var/cache/nginx
     networks:
