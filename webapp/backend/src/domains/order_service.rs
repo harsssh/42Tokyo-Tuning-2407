@@ -184,6 +184,7 @@ impl<
 
         let mut results = Vec::new();
 
+        // TODO: N+1
         for order in orders {
             let client_username = self
                 .auth_repository

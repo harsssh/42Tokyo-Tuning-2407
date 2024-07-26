@@ -18,10 +18,10 @@ impl OrderRepositoryImpl {
 impl OrderRepository for OrderRepositoryImpl {
     async fn find_order_by_id(&self, id: i32) -> Result<Order, AppError> {
         let order = sqlx::query_as::<_, Order>(
-            "SELECT 
+            "SELECT
                 *
             FROM
-                orders 
+                orders
             WHERE
                 id = ?",
         )
@@ -42,6 +42,7 @@ impl OrderRepository for OrderRepositoryImpl {
         Ok(())
     }
 
+    // TODO: クエリ改善
     async fn get_paginated_orders(
         &self,
         page: i32,
@@ -75,25 +76,25 @@ impl OrderRepository for OrderRepositoryImpl {
         };
 
         let sql = format!(
-            "SELECT 
-                o.id, 
-                o.client_id, 
-                o.dispatcher_id, 
-                o.tow_truck_id, 
-                o.status, 
-                o.node_id, 
-                o.car_value, 
-                o.order_time, 
+            "SELECT
+                o.id,
+                o.client_id,
+                o.dispatcher_id,
+                o.tow_truck_id,
+                o.status,
+                o.node_id,
+                o.car_value,
+                o.order_time,
                 o.completed_time
             FROM
                 orders o
             JOIN
                 nodes n
-            ON 
+            ON
                 o.node_id = n.id
-            {} 
-            {} 
-            LIMIT ? 
+            {}
+            {}
+            LIMIT ?
             OFFSET ?",
             where_clause, order_clause
         );
