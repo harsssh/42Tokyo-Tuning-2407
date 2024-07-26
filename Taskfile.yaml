@@ -10,14 +10,19 @@ tasks:
   ####################
   deploy:
     desc: 本番環境のデプロイ
-    deps:
-      - checkout
+    preconditions:
+      - sh: '[[ "$(hostname)" =~ ^app- ]]'
+        msg: "本番環境のみ有効です"
     dir: webapp
     cmds:
+      - task: checkout
       - bash restart_container.sh
 
   local:
     desc: ローカル環境のデプロイ
+    preconditions:
+      - sh: '[[ ! "$(hostname)" =~ ^app- ]]'
+        msg: "ローカル環境のみ有効です"
     dir: webapp
     cmds:
       - bash restart_container.sh
@@ -41,9 +46,8 @@ tasks:
 
   grade:
     desc: デプロイ & 採点
-    deps:
-      - deploy
     cmds:
+      - task: deploy
       - bash run.sh
 
   restore:
