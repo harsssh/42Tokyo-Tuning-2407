@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+# https://taskfile.dev
+version: "3"
+
+# vars:
+
+# TODO: Taskfile はプロジェクトルートから呼び出す. シンボリックリンクでもよい.
+tasks:
+  ####################
+  #      Deploy      #
+  ####################
+  deploy:
+    desc: 本番環境のデプロイ
+    deps:
+      - checkout
+    cmds:
+      - echo "Not implemented yet"
+
+  local:
+    desc: ローカル環境のデプロイ
+    cmds:
+      - echo "Not implemented yet"
+
+  test:
+    desc: テストを実行
+    cmds:
+      - echo "Not implemented yet"
+
+  bench:
+    desc: ベンチマークを実行
+    cmds:
+      - echo "Not implemented yet"
+
+  grade:
+    desc: 採点を実行
+    cmds:
+      - echo "Not implemented yet"
+
+  init-db:
+    desc: データベースの初期化
+    cmds:
+      - echo "Not implemented yet"
+
+  ####################
+  #     Utility      #
+  ####################
+  checkout:
+    desc: リモートブランチに強制的にチェックアウト
+    vars:
+      BRANCH: '{{.CLI_ARGS | default "main"}}'
+    cmds:
+      - git fetch --all
+      - git reset --hard origin/{{.BRANCH}}
+      - git switch -C {{.BRANCH}} origin/{{.BRANCH}}
+
+  ####################
+  #     Internal     #
+  ####################
