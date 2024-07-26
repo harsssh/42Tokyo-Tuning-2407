@@ -16,11 +16,11 @@ if ! docker network ls | grep -q "$NETWORK_NAME"; then
     docker network create $NETWORK_NAME
 fi
 
-if ! docker volume ls | grep -qx "nginx-logs"; then
+if ! docker volume ls | grep -qw "nginx-logs"; then
     echo "ボリューム nginx-logs が存在しないため新たに作成します"
     docker volume create nginx-logs
 fi
-if ! docker volume ls | grep -qx "mysql-logs"; then
+if ! docker volume ls | grep -qw "mysql-logs"; then
     echo "ボリューム mysql-logs が存在しないため新たに作成します"
     docker volume create mysql-logs
 fi
