@@ -8,7 +8,7 @@ if [[ $HOSTNAME == app-* ]];
 then
 	BASE_URL="https://${HOSTNAME}.ftt2407.dabaas.net"
 else
-	BASE_URL="http://host.docker.internal"
+	BASE_URL="http://nginx"
 fi
 
 # E2Eテスト開始
@@ -21,7 +21,7 @@ then
         -i 42tokyo2407.azurecr.io/e2e:latest \
         yarn test
 else
-    docker run --name e2e --rm --add-host=host.docker.internal:host-gateway \
+    docker run --name e2e --rm --network webapp-network \
         -e BASE_URL=${BASE_URL} \
         -it 42tokyo2407.azurecr.io/e2e:latest \
         yarn test
