@@ -103,7 +103,7 @@ services:
     volumes:
       - ./pprotein/data:/opt/pprotein/data
       - nginx-logs:/var/log/nginx
-      - mysql-logs:/var/log/mysq
+      - mysql-logs:/var/log/mysql
 
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter
