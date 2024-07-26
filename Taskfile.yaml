@@ -29,7 +29,7 @@ tasks:
       - bash run_e2e_test.sh
 
   bench:
-    desc: ベンチマークを実行
+    desc: ベンチマークを実行 (restore なし)
     dir: benchmarker
     vars:
       # hostname が app- 始まりなら 9000, そうでなければ 9001
@@ -40,9 +40,9 @@ tasks:
       - bash run_k6_and_score.sh
 
   grade:
-    desc: 採点を実行
+    desc: デプロイ & 採点
     deps:
-      - checkout
+      - deploy
     cmds:
       - bash run.sh
 
