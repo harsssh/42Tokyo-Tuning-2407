@@ -2,6 +2,8 @@ matching_groups:
     - ^/api/user_image/[^/]+$
     - ^/api/tow_truck/[^/]+$
     - ^/api/order/[^/]+$
+    - ^/order/[^/]+$
+    - ^/_next/.+$
 output: count,2xx,3xx,4xx,5xx,method,uri,sum,avg,p50,p90,p99,max_body
 percentiles:
     - 50
