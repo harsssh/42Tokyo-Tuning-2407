@@ -4,7 +4,6 @@ version: "3"
 
 # vars:
 
-# TODO: Taskfile はプロジェクトルートから呼び出す. シンボリックリンクでもよい.
 tasks:
   ####################
   #      Deploy      #
@@ -14,32 +13,34 @@ tasks:
     deps:
       - checkout
     cmds:
-      - echo "Not implemented yet"
+      - bash webapp/restart_container.sh
 
   local:
     desc: ローカル環境のデプロイ
     cmds:
-      - echo "Not implemented yet"
+      - bash webapp/restart_container.sh
 
   test:
     desc: テストを実行
+    dir: webapp/e2e
     cmds:
-      - echo "Not implemented yet"
+      - bash run_e2e_test.sh
 
   bench:
     desc: ベンチマークを実行
+    dir: benchmarker
     cmds:
-      - echo "Not implemented yet"
+      - bash run_k6_and_score.sh
 
   grade:
     desc: 採点を実行
     cmds:
-      - echo "Not implemented yet"
+      - bash run.sh
 
-  init-db:
-    desc: データベースの初期化
+  restore:
+    desc: データベースのリストア & マイグレーション
     cmds:
-      - echo "Not implemented yet"
+      - bash webapp/restore_and_migration.sh
 
   ####################
   #     Utility      #
