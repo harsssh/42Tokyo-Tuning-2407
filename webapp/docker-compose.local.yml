@@ -43,7 +43,9 @@ services:
 
   db:
     container_name: mysql
-    image: 42tokyo2407.azurecr.io/mysql:latest
+    build:
+      context: ./mysql
+      dockerfile: Dockerfile
     environment:
       MYSQL_ROOT_PASSWORD: mysql
       MYSQL_DATABASE: 42Tokyo-db
@@ -67,7 +69,9 @@ services:
 
   nginx:
     container_name: nginx
-    image: 42tokyo2407.azurecr.io/nginx:latest
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     ports:
       - "80:80"
     volumes:
