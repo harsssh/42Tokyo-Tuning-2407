@@ -3,7 +3,7 @@ matching_groups:
     - ^/api/tow_truck/[^/]+$
     - ^/api/order/[^/]+$
     - ^/orders/[^/]+$
-    - ^/_next/.+$
+    - ^/_next/static/.+$
 output: count,2xx,3xx,4xx,5xx,method,uri,sum,avg,p50,p90,p99,max_body
 percentiles:
     - 50
