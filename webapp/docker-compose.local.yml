@@ -77,6 +77,8 @@ services:
     volumes:
       - ./nginx/nginx.local.conf:/etc/nginx/nginx.conf
       - nginx-logs:/var/log/nginx
+    tmpfs:
+      - /var/cache/nginx
     networks:
       - webapp-network
     depends_on:

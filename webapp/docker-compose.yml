@@ -83,6 +83,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - /da/tls:/da/tls:ro
       - nginx-logs:/var/log/nginx
+    tmpfs:
+      - /var/cache/nginx
     networks:
       - webapp-network
     depends_on:
