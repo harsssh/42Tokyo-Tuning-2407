@@ -6,7 +6,7 @@ services:
       context: pprotein
       dockerfile: Dockerfile
     ports:
-      - 9001:9000
+      - 9000:9000
     volumes:
       - ./pprotein/data:/opt/pprotein/data
       - nginx-logs:/var/log/nginx
