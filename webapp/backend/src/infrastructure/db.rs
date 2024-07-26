@@ -1,9 +1,17 @@
 use sqlx::mysql::MySqlPool;
-use std::env;
 
+// TODO: パラメータの最適値を考える
 pub async fn create_pool() -> MySqlPool {
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    MySqlPool::connect(&database_url)
+    let options = sqlx::mysql::MySqlConnectOptions::new()
+        .socket("/var/run/mysqld/mysqld.sock")
+        .username("user")
+        .password("password")
+        .database("42Tokyo-db")
+        .statement_cache_capacity(1000);
+
+    sqlx::mysql::MySqlPoolOptions::new()
+        .max_connections(20)
+        .connect_with(options)
         .await
-        .expect("Failed to create pool")
+        .expect("failed to connect db")
 }
