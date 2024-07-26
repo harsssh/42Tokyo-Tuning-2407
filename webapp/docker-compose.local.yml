@@ -55,7 +55,7 @@ services:
       - "13306:3306"
     volumes:
       - ./mysql/init:/docker-entrypoint-initdb.d
-      - ./mysql/conf.d:/etc/mysql/conf.d
+      - ./mysql/conf.d/my.local.cnf:/etc/mysql/conf.d/my.local.cnf
       - ./mysql/migration:/etc/mysql/migration
     networks:
       - webapp-network
