@@ -62,7 +62,8 @@ tasks:
   checkout:
     desc: リモートブランチに強制的にチェックアウト
     vars:
-      BRANCH: '{{.CLI_ARGS | default "main"}}'
+      BRANCH:
+        sh: if [[ -z "{{.CLI_ARGS}}" ]]; then git branch --show-current; else echo "{{.CLI_ARGS}}"; fi
     cmds:
       - git fetch --all
       - git reset --hard origin/{{.BRANCH}}
