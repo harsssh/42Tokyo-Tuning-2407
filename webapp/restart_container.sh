@@ -27,13 +27,13 @@ fi
 
 
 if [[ $HOSTNAME == app-* ]]; then
-    docker compose down --volumes --rmi local
+    docker compose down --volumes --rmi local --remove-orphans
 	HOSTNAME=$HOSTNAME docker compose up --build -d
 else
     echo "ローカル環境でのコンテナ再起動を開始します。"
     # init.sh実行時には実行しない
     # if [ -f ./../.da/.initLock ]; then
-    #     docker compose down db --volumes --rmi local
+    #     docker compose down db --volumes --rmi local --remove-orphans
     # fi
 	docker compose -f docker-compose.local.yml up --build -d
 fi
