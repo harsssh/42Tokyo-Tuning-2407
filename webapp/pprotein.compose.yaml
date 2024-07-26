@@ -14,4 +14,6 @@ services:
 
 volumes:
   nginx-logs:
+    external: true
   mysql-logs:
+    external: true
