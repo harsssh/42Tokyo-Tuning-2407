@@ -167,6 +167,8 @@ impl<T: AuthRepository + std::fmt::Debug> AuthService<T> {
         let path: PathBuf =
             Path::new(&format!("images/user_profile/{}", profile_image_name)).to_path_buf();
 
+        // TODO: コマンド使うのをやめる
+        // 画像をローカルに書き出して、NGINX で返すとより効率的
         let output = Command::new("magick")
             .arg(&path)
             .arg("-resize")
