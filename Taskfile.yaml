@@ -32,7 +32,7 @@ tasks:
     desc: ベンチマークを実行
     dir: benchmarker
     cmds:
-      - curl localhost:9000/api/group/collect
+      - curl localhost:9001/api/group/collect
       - bash run_k6_and_score.sh
 
   grade:
