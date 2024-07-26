@@ -109,7 +109,7 @@ services:
     image: nginx/nginx-prometheus-exporter
     container_name: nginx-exporter
     restart: unless-stopped
-    command: ["-nginx.scrape-uri=http://nginx/status"]
+    command: ["-nginx.scrape-uri=http://nginx/nginx_status"]
     networks:
       - webapp-network
 
