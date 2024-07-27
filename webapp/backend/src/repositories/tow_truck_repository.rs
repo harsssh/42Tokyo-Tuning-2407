@@ -1,16 +1,21 @@
 use crate::domains::tow_truck_service::TowTruckRepository;
 use crate::errors::AppError;
 use crate::models::tow_truck::TowTruck;
+use moka::future::Cache;
 use sqlx::mysql::MySqlPool;
 
 #[derive(Debug)]
 pub struct TowTruckRepositoryImpl {
     pool: MySqlPool,
+    latest_location_node_id_cache: Cache<i32, i32>,
 }
 
 impl TowTruckRepositoryImpl {
-    pub fn new(pool: MySqlPool) -> Self {
-        TowTruckRepositoryImpl { pool }
+    pub fn new(pool: MySqlPool, latest_location_node_id_cache: Cache<i32, i32>) -> Self {
+        TowTruckRepositoryImpl {
+            pool,
+            latest_location_node_id_cache,
+        }
     }
 }
 
@@ -45,6 +50,7 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
             )
         };
 
+        // NOTE: node_id のキャッシュをここでも使うのは難しそう
         let query = format!(
             "SELECT
                 tt.id,
@@ -75,6 +81,10 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
     }
 
     async fn update_location(&self, tow_truck_id: i32, node_id: i32) -> Result<(), AppError> {
+        self.latest_location_node_id_cache
+            .insert(tow_truck_id, node_id)
+            .await;
+
         sqlx::query("INSERT INTO locations (tow_truck_id, node_id) VALUES (?, ?)")
             .bind(tow_truck_id)
             .bind(node_id)
@@ -97,7 +107,7 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
         let tow_truck = sqlx::query_as::<_, TowTruck>(
             "SELECT
                 tt.id, tt.driver_id, u.username AS driver_username, tt.status, tt.area_id,
-                (SELECT node_id FROM locations WHERE tow_truck_id = tt.id ORDER BY timestamp DESC LIMIT 1) AS node_id
+                1 AS node_id
             FROM
                 tow_trucks tt
             JOIN
@@ -106,12 +116,31 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
                 tt.driver_id = u.id
             WHERE
                 tt.id = ?
-            "
+            ",
         )
         .bind(id)
         .fetch_optional(&self.pool)
         .await?;
 
-        Ok(tow_truck)
+        if let Some(mut tow_truck) = tow_truck {
+            // NOTE: エラーハンドリングをちゃんとやる
+            let node_id = self.latest_location_node_id_cache
+            .try_get_with(tow_truck.id, async {
+                let node_id = sqlx::query_scalar::<_, i32>(
+                    "SELECT node_id FROM locations WHERE tow_truck_id = ? ORDER BY timestamp DESC LIMIT 1"
+                )
+                .bind(tow_truck.id)
+                .fetch_one(&self.pool)
+                .await?;
+                Ok::<_, sqlx::Error>(node_id)
+            })
+            .await
+            .map_err(|_| AppError::InternalServerError)?;
+
+            tow_truck.node_id = node_id;
+            Ok(Some(tow_truck))
+        } else {
+            Ok(None)
+        }
     }
 }
