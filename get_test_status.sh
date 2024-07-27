@@ -10,6 +10,8 @@ fi
 
 PREVIOUS_REMAINING=""
 
+FLAG=0
+
 while true; do
     RESPONSE=$(curl -s -G --resolve stress.ftt2407.dabaas.net:443:$IP_ADDRESS https://stress.ftt2407.dabaas.net/api/get_status --data-urlencode "jobId=$JOB_ID")
 
@@ -29,7 +31,12 @@ while true; do
             printf "\r\033[K現在キューイング中ですのでしばらくお待ち下さい%-5s現在の待ち人数：[ %3d ]人" "$DOTS" "$REMAINING"
             ;;
         "running")
-            curl localhost:9000/api/group/collect
+
+            if [ $FLAG -eq 0 ]; then
+                curl localhost:9000/api/group/collect
+                FLAG=1
+            fi
+
             PROGRESS=$(echo "$RESPONSE" | jq -r '.progress')
 
             if [ "$PROGRESS" -eq 100 ]; then
