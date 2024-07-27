@@ -104,21 +104,14 @@ impl<
             graph.add_edge(edge);
         }
 
-        let mut min_distance_truck = None;
-        let mut min_distance = std::f64::MAX;
-
-        for truck in &tow_trucks {
-            let distance = calculate_distance(&graph, truck.node_id, order.node_id);
-            if (distance as f64) < min_distance {
-                min_distance = distance as f64;
-                min_distance_truck = Some(truck.clone());
-            }
-        }
-
-        if let Some(truck) = min_distance_truck {
-            if min_distance > 10000000.0 {
-                return Ok(None);
-            }
+        let truck_node_ids: Vec<i32> = tow_trucks.iter().map(|truck| truck.node_id).collect();
+        if let Some(id) = graph.find_closest_node(order.node_id, truck_node_ids, 10000000) {
+            // NOTE: 検索処理が負荷になるかも
+            let truck = tow_trucks
+                .par_iter()
+                .find_any(|truck| truck.node_id == id)
+                .cloned()
+                .unwrap();
 
             let tow_truck_dto = TowTruckDto::from_entity(truck);
             Ok(Some(tow_truck_dto))
@@ -126,8 +119,4 @@ impl<
             Ok(None)
         }
     }
-}
-
-fn calculate_distance(graph: &Graph, node_id_1: i32, node_id_2: i32) -> i32 {
-    graph.shortest_path(node_id_1, node_id_2)
 }

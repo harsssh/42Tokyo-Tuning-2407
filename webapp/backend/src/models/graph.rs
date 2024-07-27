@@ -1,5 +1,5 @@
 use sqlx::FromRow;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::{cmp::Reverse, collections::BinaryHeap};
 
 #[derive(FromRow, Clone, Debug)]
@@ -51,18 +51,26 @@ impl Graph {
             .push(reverse_edge);
     }
 
-    pub fn shortest_path(&self, from_node_id: i32, to_node_id: i32) -> i32 {
+    // return node_id
+    pub fn find_closest_node(
+        &self,
+        from_node_id: i32,
+        to_node_ids: Vec<i32>,
+        limit: i32,
+    ) -> Option<i32> {
+        let goals: HashSet<_> = to_node_ids.iter().collect();
+
         let mut distances = HashMap::new();
         let mut heap = BinaryHeap::new();
 
         heap.push(Reverse((0, from_node_id)));
 
         while let Some(Reverse((distance, node_id))) = heap.pop() {
-            if node_id == to_node_id {
-                return distance;
+            if goals.contains(&node_id) {
+                return Some(node_id);
             }
 
-            if distance >= *distances.get(&node_id).unwrap_or(&i32::MAX) {
+            if distance > *distances.get(&node_id).unwrap_or(&limit) {
                 continue;
             }
 
@@ -71,13 +79,13 @@ impl Graph {
             if let Some(edges) = self.edges.get(&node_id) {
                 for edge in edges.iter() {
                     let new_distance = distance + edge.weight;
-                    if new_distance < *distances.get(&edge.node_b_id).unwrap_or(&i32::MAX) {
+                    if new_distance <= *distances.get(&edge.node_b_id).unwrap_or(&limit) {
                         heap.push(Reverse((new_distance, edge.node_b_id)));
                     }
                 }
             }
         }
 
-        i32::MAX
+        None
     }
 }
