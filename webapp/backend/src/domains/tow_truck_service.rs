@@ -92,8 +92,10 @@ impl<
             .get_paginated_tow_trucks(0, -1, Some("available".to_string()), Some(area_id))
             .await?;
 
-        let nodes = self.map_repository.get_all_nodes(Some(area_id)).await?;
-        let edges = self.map_repository.get_all_edges(Some(area_id)).await?;
+        let (nodes, edges) = tokio::try_join!(
+            self.map_repository.get_all_nodes(Some(area_id)),
+            self.map_repository.get_all_edges(Some(area_id))
+        )?;
 
         let mut graph = Graph::new();
         for node in nodes {
@@ -103,30 +105,27 @@ impl<
             graph.add_edge(edge);
         }
 
-        let sorted_tow_trucks_by_distance = {
-            let mut tow_trucks_with_distance: Vec<_> = tow_trucks
-                .into_par_iter()
-                .map(|truck| {
-                    let distance = calculate_distance(&graph, truck.node_id, order.node_id);
-                    (distance, truck)
-                })
-                .collect();
+        let mut min_distance_truck = None;
+        let mut min_distance = std::f64::MAX;
 
-            tow_trucks_with_distance.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-            tow_trucks_with_distance
-        };
-
-        if sorted_tow_trucks_by_distance.is_empty() || sorted_tow_trucks_by_distance[0].0 > 10000000
-        {
-            return Ok(None);
+        for truck in &tow_trucks {
+            let distance = calculate_distance(&graph, truck.node_id, order.node_id);
+            if (distance as f64) < min_distance {
+                min_distance = distance as f64;
+                min_distance_truck = Some(truck.clone());
+            }
         }
 
-        let sorted_tow_truck_dtos: Vec<TowTruckDto> = sorted_tow_trucks_by_distance
-            .into_iter()
-            .map(|(_, truck)| TowTruckDto::from_entity(truck))
-            .collect();
+        if let Some(truck) = min_distance_truck {
+            if min_distance > 10000000.0 {
+                return Ok(None);
+            }
 
-        Ok(sorted_tow_truck_dtos.first().cloned())
+            let tow_truck_dto = TowTruckDto::from_entity(truck);
+            Ok(Some(tow_truck_dto))
+        } else {
+            Ok(None)
+        }
     }
 }
 
