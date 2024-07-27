@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 use super::dto::tow_truck::TowTruckDto;
 use super::map_service::MapRepository;
 use super::order_service::OrderRepository;
@@ -102,7 +104,7 @@ impl<
 
         let sorted_tow_trucks_by_distance = {
             let mut tow_trucks_with_distance: Vec<_> = tow_trucks
-                .into_iter()
+                .into_par_iter()
                 .map(|truck| {
                     let distance = calculate_distance(&graph, truck.node_id, order.node_id);
                     (distance, truck)

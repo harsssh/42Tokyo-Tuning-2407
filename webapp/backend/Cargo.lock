@@ -475,6 +475,7 @@ dependencies = [
  "log",
  "moka",
  "rand",
+ "rayon",
  "serde",
  "sqlx",
  "syn 1.0.109",
