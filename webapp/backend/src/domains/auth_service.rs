@@ -152,6 +152,9 @@ impl<T: AuthRepository + std::fmt::Debug> AuthService<T> {
 
     // NOTE: 戻り値は Path が適切かもしれない
     pub async fn get_resized_profile_image_path(&self, user_id: i32) -> Result<String, AppError> {
+        let icon_width = 500;
+        let icon_height = 500;
+
         let profile_image_name = match self
             .repository
             .find_profile_image_name_by_user_id(user_id)
@@ -165,12 +168,13 @@ impl<T: AuthRepository + std::fmt::Debug> AuthService<T> {
         let path: PathBuf =
             Path::new(&format!("images/user_profile/{}", profile_image_name)).to_path_buf();
 
-        let output_path = Path::new(&format!(
-            "images/user_profile/resized_{}",
-            profile_image_name
-        ))
-        .to_path_buf();
-        let redirect_path = format!("/protected/resized_{}", profile_image_name);
+        // 画像サイズを含むファイル名でリサイズ済み画像を保存
+        let output_name = format!(
+            "resized_{}_{}_{}",
+            icon_width, icon_height, profile_image_name
+        );
+        let output_path = Path::new(&format!("images/user_profile/{}", output_name)).to_path_buf();
+        let redirect_path = format!("/protected/{}", output_name);
 
         // 既にリサイズ済みの画像が存在するか確認
         if output_path.exists() {
