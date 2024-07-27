@@ -3,12 +3,12 @@
     "Type": "httplog",
     "Label": "localhost",
     "URL": "http://localhost:9000/debug/log/httplog",
-    "Duration": 90
+    "Duration": 120
   },
   {
     "Type": "slowlog",
     "Label": "localhost",
     "URL": "http://localhost:9000/debug/log/slowlog",
-    "Duration": 90
+    "Duration": 120
   }
 ]
