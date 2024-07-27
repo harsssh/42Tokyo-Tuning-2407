@@ -222,11 +222,6 @@ impl<
             .get_paginated_orders(page, page_size, sort_by, sort_order, status, area)
             .await?;
 
-        // order.client_id -> user.username
-        // order.dispatcher_id -> dispatcher.user_id -> user.username
-        // order.tow_truck_id -> tow_truck.driver_id -> user.username
-        // order.node_id -> nodes.area_id
-
         let username_map = self.get_username_map(&orders).await?;
         let dispatcher_info_map = self.get_dispatcher_info_map(&orders).await?;
 
@@ -244,17 +239,26 @@ impl<
                 None => (None, None),
             };
 
-            // TODO: N+1
-            let tow_truck = match order.tow_truck_id {
-                Some(tow_truck_id) => self
-                    .tow_truck_repository
-                    .find_tow_truck_by_id(tow_truck_id)
-                    .await
-                    .unwrap(),
-                None => None,
+            let tow_truck_future = async {
+                match order.tow_truck_id {
+                    Some(tow_truck_id) => self
+                        .tow_truck_repository
+                        .find_tow_truck_by_id(tow_truck_id)
+                        .await
+                        .unwrap(),
+                    None => None,
+                }
             };
 
-            // TODO: N+1
+            let order_area_future = async {
+                self.map_repository
+                    .get_area_id_by_node_id(order.node_id)
+                    .await
+                    .unwrap()
+            };
+
+            let (tow_truck, order_area_id) = tokio::join!(tow_truck_future, order_area_future);
+
             let (driver_user_id, driver_username) = match tow_truck {
                 Some(tow_truck) => (
                     Some(tow_truck.driver_id),
@@ -269,13 +273,6 @@ impl<
                 ),
                 None => (None, None),
             };
-
-            // TODO: N+1
-            let order_area_id = self
-                .map_repository
-                .get_area_id_by_node_id(order.node_id)
-                .await
-                .unwrap();
 
             results.push(OrderDto {
                 id: order.id,
