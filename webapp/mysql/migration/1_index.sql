@@ -25,3 +25,11 @@ CREATE INDEX `idx_tow_truck_id` ON `locations` (`tow_truck_id`);
 -- tow_trucks.driver_id にインデックス
 CALL DropIndexIfExists ('tow_trucks', 'idx_driver_id');
 CREATE INDEX `idx_driver_id` ON `tow_trucks` (`driver_id`);
+
+-- tow_trucks の (area_id, status, driver_id) にインデックス
+CALL DropIndexIfExists ('tow_trucks', 'idx_area_id_status_driver_id');
+CREATE INDEX `idx_area_id_status_driver_id` ON `tow_trucks` (
+    `area_id`,
+    `status`,
+    `driver_id`
+);
