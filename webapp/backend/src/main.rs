@@ -158,5 +158,5 @@ async fn main() -> std::io::Result<()> {
     fs::set_permissions(sock_path, perm)?;
 
     // TODO: 最適値を考える
-    server.workers(30).backlog(30).run().await
+    server.workers(8).backlog(256).run().await
 }
