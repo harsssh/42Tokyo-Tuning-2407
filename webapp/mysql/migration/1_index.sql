@@ -19,8 +19,8 @@ CALL DropIndexIfExists ('nodes', 'idx_area_id');
 CREATE INDEX `idx_area_id` ON `nodes` (`area_id`);
 
 -- locations.tow_truck_id にインデックス
-CALL DropIndexIfExists ( 'locations', 'idx_tow_truck_id' );
-CREATE INDEX `idx_tow_truck_id` ON `locations` (`tow_truck_id`);
+CALL DropIndexIfExists ( 'locations', 'idx_tow_truck_id_timestamp' );
+CREATE INDEX `idx_tow_truck_id_timestamp` ON `locations` (`tow_truck_id`, `timestamp` DESC);
 
 -- tow_trucks.driver_id にインデックス
 CALL DropIndexIfExists ('tow_trucks', 'idx_driver_id');
