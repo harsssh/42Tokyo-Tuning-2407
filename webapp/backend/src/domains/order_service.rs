@@ -232,7 +232,6 @@ impl<
 
         let mut results = Vec::new();
 
-        // TODO: N+1
         for order in orders {
             let client_username = username_map.get(&order.client_id).unwrap().clone();
 
