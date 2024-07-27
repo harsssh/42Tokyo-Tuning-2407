@@ -10,7 +10,7 @@ pub async fn create_pool() -> MySqlPool {
         .statement_cache_capacity(1000);
 
     sqlx::mysql::MySqlPoolOptions::new()
-        .max_connections(20)
+        .max_connections(40)
         .connect_with(options)
         .await
         .expect("failed to connect db")
