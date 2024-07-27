@@ -22,29 +22,27 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
         status: Option<String>,
         area_id: Option<i32>,
     ) -> Result<Vec<TowTruck>, AppError> {
-        let where_clause = match (status, area_id) {
-            (Some(status), Some(area_id)) => format!(
-                "WHERE tt.status = '{}' AND tt.area_id = {} AND l.timestamp = (SELECT MAX(timestamp) FROM locations WHERE tow_truck_id = tt.id)",
-                status, area_id
-            ),
-            (None, Some(area_id)) => format!(
-                "WHERE tt.area_id = {} AND l.timestamp = (SELECT MAX(timestamp) FROM locations WHERE tow_truck_id = tt.id)",
-                area_id
-            ),
-            (Some(status), None) => format!(
-                "WHERE tt.status = '{}' AND l.timestamp = (SELECT MAX(timestamp) FROM locations WHERE tow_truck_id = tt.id)",
-                status
-            ),
-            (None, None) => "WHERE l.timestamp = (SELECT MAX(timestamp) FROM locations WHERE tow_truck_id = tt.id)"
-                .to_string(),
+        let mut where_conditions = vec![];
+        if let Some(status) = status {
+            where_conditions.push(format!("tt.status = '{}'", status));
+        }
+        if let Some(area_id) = area_id {
+            where_conditions.push(format!("tt.area_id = {}", area_id));
+        }
+
+        let where_clause = if where_conditions.is_empty() {
+            "".to_string()
+        } else {
+            format!("WHERE {}", where_conditions.join(" AND "))
         };
-        let limit_clause = match page_size {
-            -1 => "".to_string(),
-            _ => format!("LIMIT {}", page_size),
-        };
-        let offset_clause = match page_size {
-            -1 => "".to_string(),
-            page_size => format!("OFFSET {}", page * page_size),
+
+        let (limit_clause, offset_clause) = if page_size == -1 {
+            ("".to_string(), "".to_string())
+        } else {
+            (
+                format!("LIMIT {}", page_size),
+                format!("OFFSET {}", page * page_size),
+            )
         };
 
         let query = format!(
@@ -54,17 +52,13 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
                 u.username AS driver_username,
                 tt.status,
                 tt.area_id,
-                l.node_id
+                (SELECT node_id FROM locations WHERE tow_truck_id = tt.id ORDER BY timestamp DESC LIMIT 1) AS node_id
             FROM
                 tow_trucks tt
             JOIN
                 users u
             ON
                 tt.driver_id = u.id
-            JOIN 
-                locations l
-            ON 
-                tt.id = l.tow_truck_id
             {}
             ORDER BY
                 tt.id ASC
@@ -106,7 +100,7 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
             FROM
                 tow_trucks tt
             JOIN
-                users u 
+                users u
             ON
                 tt.driver_id = u.id
             JOIN
