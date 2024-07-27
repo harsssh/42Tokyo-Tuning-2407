@@ -200,6 +200,7 @@ impl<
         let user_ids: Vec<i32> = dispatchers.iter().map(|d| d.user_id).collect();
         let users = self.auth_repository.find_users_by_ids(&user_ids).await?;
 
+        // 必ず同数なので zip して OK
         Ok(dispatchers
             .into_iter()
             .zip(users.into_iter())
