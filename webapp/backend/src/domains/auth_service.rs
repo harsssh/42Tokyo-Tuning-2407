@@ -34,6 +34,7 @@ pub trait AuthRepository {
     async fn delete_session(&self, session_token: &str) -> Result<(), AppError>;
     async fn find_session_by_session_token(&self, session_token: &str)
         -> Result<Session, AppError>;
+    async fn find_users_by_ids(&self, ids: &[i32]) -> Result<Vec<User>, AppError>;
 }
 
 #[derive(Debug)]
