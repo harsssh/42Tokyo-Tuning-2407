@@ -328,13 +328,12 @@ impl<
             return Err(AppError::BadRequest);
         }
 
-        self.order_repository
-            .update_order_dispatched(order_id, dispatcher_id, tow_truck_id)
-            .await?;
-
-        self.tow_truck_repository
-            .update_status(tow_truck_id, "busy")
-            .await?;
+        tokio::try_join!(
+            self.order_repository
+                .update_order_dispatched(order_id, dispatcher_id, tow_truck_id),
+            self.tow_truck_repository
+                .update_status(tow_truck_id, "busy")
+        )?;
 
         Ok(())
     }
