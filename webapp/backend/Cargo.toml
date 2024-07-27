@@ -19,7 +19,7 @@ argon2 = "0.5.3"
 futures-util = "0.3.30"
 log = "0.4.22"
 actix-files = "0.6.6"
-image = "0.24.9"
+image = { version = "0.24.9", features = ["png"] }
 
 [build-dependencies]
 syn = "1"
