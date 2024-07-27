@@ -25,10 +25,11 @@ while true; do
     case "$STATUS" in
         "queuing")
             REMAINING=$(echo "$RESPONSE" | jq -r '.remaining')
-            
+
             printf "\r\033[K現在キューイング中ですのでしばらくお待ち下さい%-5s現在の待ち人数：[ %3d ]人" "$DOTS" "$REMAINING"
             ;;
         "running")
+            curl localhost:9000/api/group/collect
             PROGRESS=$(echo "$RESPONSE" | jq -r '.progress')
 
             if [ "$PROGRESS" -eq 100 ]; then

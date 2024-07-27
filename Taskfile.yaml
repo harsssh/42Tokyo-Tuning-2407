@@ -34,20 +34,8 @@ tasks:
       - bash run_e2e_test.sh
 
   bench:
-    desc: ベンチマークを実行 (restore なし)
-    dir: benchmarker
-    vars:
-      # hostname が app- 始まりなら 9000, そうでなければ 9001
-      PPROTEIN_PORT:
-        sh: if [[ "$(hostname)" =~ ^app- ]]; then echo 9000; else echo 9001; fi
+    desc: ベンチマークを実行
     cmds:
-      - curl "localhost:{{.PPROTEIN_PORT}}/api/group/collect"
-      - bash run_k6_and_score.sh
-
-  grade:
-    desc: デプロイ & 採点
-    cmds:
-      - task: checkout
       - bash run.sh
 
   restore:
