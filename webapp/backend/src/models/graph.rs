@@ -1,5 +1,5 @@
 use sqlx::FromRow;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::{cmp::Reverse, collections::BinaryHeap};
 
 #[derive(FromRow, Clone, Debug)]
@@ -59,10 +59,8 @@ impl Graph {
         limit: i32,
     ) -> Option<i32> {
         let goals: HashSet<_> = to_node_ids.iter().collect();
-
-        let mut distances = HashMap::new();
+        let mut distances = BTreeMap::new();
         let mut heap = BinaryHeap::new();
-
         heap.push(Reverse((0, from_node_id)));
 
         while let Some(Reverse((distance, node_id))) = heap.pop() {
