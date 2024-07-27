@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 
 use super::{
@@ -168,6 +170,44 @@ impl<
         })
     }
 
+    // HashMap<user_id, username>
+    async fn get_username_map(&self, orders: &[Order]) -> Result<HashMap<i32, String>, AppError> {
+        let client_ids: Vec<i32> = orders.iter().map(|order| order.client_id).collect();
+
+        Ok(self
+            .auth_repository
+            .find_users_by_ids(&client_ids)
+            .await?
+            .into_iter()
+            .map(|u| (u.id, u.username))
+            .collect())
+    }
+
+    // HashMap<dispatcher_id, (user_id, username)>
+    async fn get_dispatcher_info_map(
+        &self,
+        orders: &[Order],
+    ) -> Result<HashMap<i32, (i32, String)>, AppError> {
+        let dispatcher_ids: Vec<i32> = orders
+            .iter()
+            .filter_map(|order| order.dispatcher_id)
+            .collect();
+        let dispatchers = self
+            .auth_repository
+            .find_dispatchers_by_ids(&dispatcher_ids)
+            .await?;
+
+        let user_ids: Vec<i32> = dispatchers.iter().map(|d| d.user_id).collect();
+        let users = self.auth_repository.find_users_by_ids(&user_ids).await?;
+
+        // 必ず同数なので zip して OK
+        Ok(dispatchers
+            .into_iter()
+            .zip(users.into_iter())
+            .map(|(d, u)| (d.id, (u.id, u.username)))
+            .collect())
+    }
+
     pub async fn get_paginated_orders(
         &self,
         page: i32,
@@ -182,42 +222,29 @@ impl<
             .get_paginated_orders(page, page_size, sort_by, sort_order, status, area)
             .await?;
 
+        // order.client_id -> user.username
+        // order.dispatcher_id -> dispatcher.user_id -> user.username
+        // order.tow_truck_id -> tow_truck.driver_id -> user.username
+        // order.node_id -> nodes.area_id
+
+        let username_map = self.get_username_map(&orders).await?;
+        let dispatcher_info_map = self.get_dispatcher_info_map(&orders).await?;
+
         let mut results = Vec::new();
 
-        // TODO: N+1
         for order in orders {
-            let client_username = self
-                .auth_repository
-                .find_user_by_id(order.client_id)
-                .await
-                .unwrap()
-                .unwrap()
-                .username;
+            let client_username = username_map.get(&order.client_id).unwrap().clone();
 
-            let dispatcher = match order.dispatcher_id {
-                Some(dispatcher_id) => self
-                    .auth_repository
-                    .find_dispatcher_by_id(dispatcher_id)
-                    .await
-                    .unwrap(),
-                None => None,
-            };
-
-            let (dispatcher_user_id, dispatcher_username) = match dispatcher {
-                Some(dispatcher) => (
-                    Some(dispatcher.user_id),
-                    Some(
-                        self.auth_repository
-                            .find_user_by_id(dispatcher.user_id)
-                            .await
-                            .unwrap()
-                            .unwrap()
-                            .username,
-                    ),
-                ),
+            let (dispatcher_user_id, dispatcher_username) = match order.dispatcher_id {
+                Some(dispatcher_id) => {
+                    let (user_id, username) =
+                        dispatcher_info_map.get(&dispatcher_id).unwrap().clone();
+                    (Some(user_id), Some(username))
+                }
                 None => (None, None),
             };
 
+            // TODO: N+1
             let tow_truck = match order.tow_truck_id {
                 Some(tow_truck_id) => self
                     .tow_truck_repository
@@ -227,6 +254,7 @@ impl<
                 None => None,
             };
 
+            // TODO: N+1
             let (driver_user_id, driver_username) = match tow_truck {
                 Some(tow_truck) => (
                     Some(tow_truck.driver_id),
@@ -242,6 +270,7 @@ impl<
                 None => (None, None),
             };
 
+            // TODO: N+1
             let order_area_id = self
                 .map_repository
                 .get_area_id_by_node_id(order.node_id)

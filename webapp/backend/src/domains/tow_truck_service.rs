@@ -6,7 +6,6 @@ use super::order_service::OrderRepository;
 use crate::errors::AppError;
 use crate::models::graph::Graph;
 use crate::models::tow_truck::TowTruck;
-use std::time;
 
 pub trait TowTruckRepository {
     async fn get_paginated_tow_trucks(
