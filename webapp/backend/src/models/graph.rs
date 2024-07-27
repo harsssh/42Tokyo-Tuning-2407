@@ -1,8 +1,5 @@
-use image::imageops::FilterType::Nearest;
-use rand::distributions::weighted::alias_method::Weight;
 use sqlx::FromRow;
 use std::collections::HashMap;
-use std::iter::Sum;
 use std::{cmp::Reverse, collections::BinaryHeap};
 
 #[derive(FromRow, Clone, Debug)]
@@ -73,15 +70,8 @@ impl Graph {
 
             if let Some(edges) = self.edges.get(&node_id) {
                 for edge in edges.iter() {
-                    let next_node = {
-                        if node_id == edge.node_a_id {
-                            edge.node_b_id
-                        } else {
-                            edge.node_a_id
-                        }
-                    };
-                    if distance + edge.weight < distances[next_node as usize] {
-                        heap.push(Reverse((distance + edge.weight, next_node)));
+                    if distance + edge.weight < distances[edge.node_b_id as usize] {
+                        heap.push(Reverse((distance + edge.weight, edge.node_b_id)));
                     }
                 }
             }
