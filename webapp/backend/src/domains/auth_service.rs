@@ -1,5 +1,5 @@
-use std::path::{Path, PathBuf};
 use log::error;
+use std::path::{Path, PathBuf};
 
 use crate::errors::AppError;
 use crate::models::user::{Dispatcher, Session, User};
@@ -105,44 +105,44 @@ impl<T: AuthRepository + std::fmt::Debug> AuthService<T> {
         username: &str,
         password: &str,
     ) -> Result<LoginResponseDto, AppError> {
-        match self.repository.find_user_by_username(username).await? {
-            Some(user) => {
-                let is_password_valid = verify_password(&user.password, password).unwrap();
-                if !is_password_valid {
-                    return Err(AppError::Unauthorized);
-                }
-
-                let session_token = generate_session_token();
-                self.repository
-                    .create_session(user.id, &session_token)
-                    .await?;
-
-                match user.role.as_str() {
-                    "dispatcher" => {
-                        match self.repository.find_dispatcher_by_user_id(user.id).await? {
-                            Some(dispatcher) => Ok(LoginResponseDto {
-                                user_id: user.id,
-                                username: user.username,
-                                session_token,
-                                role: user.role.clone(),
-                                dispatcher_id: Some(dispatcher.id),
-                                area_id: Some(dispatcher.area_id),
-                            }),
-                            None => Err(AppError::InternalServerError),
-                        }
-                    }
-                    _ => Ok(LoginResponseDto {
-                        user_id: user.id,
-                        username: user.username,
-                        session_token,
-                        role: user.role.clone(),
-                        dispatcher_id: None,
-                        area_id: None,
-                    }),
-                }
-            }
-            None => Err(AppError::Unauthorized),
+        let user = self
+            .repository
+            .find_user_by_username(username)
+            .await?
+            .ok_or(AppError::Unauthorized)?;
+        if !verify_password(&user.password, password).unwrap() {
+            return Err(AppError::Unauthorized);
         }
+
+        let session_token = generate_session_token();
+        self.repository
+            .create_session(user.id, &session_token)
+            .await?;
+
+        let dispatcher_id: Option<i32>;
+        let area_id: Option<i32>;
+
+        if user.role == "dispatcher" {
+            let dispatcher = self
+                .repository
+                .find_dispatcher_by_user_id(user.id)
+                .await?
+                .ok_or(AppError::InternalServerError)?;
+            dispatcher_id = Some(dispatcher.id);
+            area_id = Some(dispatcher.area_id);
+        } else {
+            dispatcher_id = None;
+            area_id = None;
+        }
+
+        Ok(LoginResponseDto {
+            user_id: user.id,
+            username: user.username,
+            session_token,
+            role: user.role.clone(),
+            dispatcher_id,
+            area_id,
+        })
     }
 
     pub async fn logout_user(&self, session_token: &str) -> Result<(), AppError> {
