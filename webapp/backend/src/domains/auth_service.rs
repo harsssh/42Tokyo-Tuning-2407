@@ -183,10 +183,11 @@ impl<T: AuthRepository + std::fmt::Debug> AuthService<T> {
         let output_path = Path::new(&format!("images/user_profile/{}", output_name)).to_path_buf();
         let redirect_path = format!("/protected/{}", output_name);
 
+        // NOTE: レギュレーションで禁止
         // 既にリサイズ済みの画像が存在するか確認
-        if output_path.exists() {
-            return Ok(redirect_path);
-        }
+        // if output_path.exists() {
+        // return Ok(redirect_path);
+        // }
 
         self.resize_and_save_image(&path, &output_path, icon_width, icon_height)
             .await?;
