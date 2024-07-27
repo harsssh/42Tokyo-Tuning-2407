@@ -1,5 +1,9 @@
+use image::imageops::FilterType::Nearest;
+use rand::distributions::weighted::alias_method::Weight;
 use sqlx::FromRow;
 use std::collections::HashMap;
+use std::iter::Sum;
+use std::{cmp::Reverse, collections::BinaryHeap};
 
 #[derive(FromRow, Clone, Debug)]
 pub struct Node {
@@ -51,26 +55,38 @@ impl Graph {
     }
 
     pub fn shortest_path(&self, from_node_id: i32, to_node_id: i32) -> i32 {
-        let mut distances = HashMap::new();
-        distances.insert(from_node_id, 0);
+        let mut distances = vec![std::i32::MAX / 2; self.nodes.len() + 1];
+        let mut heap = BinaryHeap::new();
 
-        for _ in 0..self.nodes.len() {
-            for node_id in self.nodes.keys() {
-                if let Some(edges) = self.edges.get(node_id) {
-                    for edge in edges {
-                        let new_distance = distances
-                            .get(node_id)
-                            .and_then(|d: &i32| d.checked_add(edge.weight))
-                            .unwrap_or(i32::MAX);
-                        let current_distance = distances.get(&edge.node_b_id).unwrap_or(&i32::MAX);
-                        if new_distance < *current_distance {
-                            distances.insert(edge.node_b_id, new_distance);
+        heap.push(Reverse((0, from_node_id)));
+
+        while let Some(Reverse((distance, node_id))) = heap.pop() {
+            if node_id == to_node_id {
+                return distance;
+            }
+
+            if distance >= distances[node_id as usize] {
+                continue;
+            }
+
+            distances[node_id as usize] = distance;
+
+            if let Some(edges) = self.edges.get(&node_id) {
+                for edge in edges.iter() {
+                    let next_node = {
+                        if node_id == edge.node_a_id {
+                            edge.node_b_id
+                        } else {
+                            edge.node_a_id
                         }
+                    };
+                    if distance + edge.weight < distances[next_node as usize] {
+                        heap.push(Reverse((distance + edge.weight, next_node)));
                     }
                 }
             }
         }
 
-        distances.get(&to_node_id).cloned().unwrap_or(i32::MAX)
+        i32::MAX
     }
 }
