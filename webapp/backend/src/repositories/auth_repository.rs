@@ -15,6 +15,27 @@ impl AuthRepositoryImpl {
 }
 
 impl AuthRepository for AuthRepositoryImpl {
+    async fn find_dispatchers_by_ids(
+        &self,
+        dispatcher_ids: &[i32],
+    ) -> Result<Vec<Dispatcher>, AppError> {
+        if dispatcher_ids.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let mut qb = sqlx::QueryBuilder::new("SELECT * FROM dispatchers WHERE id IN (");
+        let mut sep = qb.separated(", ");
+        for id in dispatcher_ids {
+            sep.push_bind(id);
+        }
+        sep.push_unseparated(")");
+
+        Ok(qb
+            .build_query_as::<Dispatcher>()
+            .fetch_all(&self.pool)
+            .await?)
+    }
+
     async fn find_users_by_ids(&self, ids: &[i32]) -> Result<Vec<User>, AppError> {
         if ids.is_empty() {
             return Ok(vec![]);
