@@ -19,7 +19,7 @@ CALL DropIndexIfExists ('nodes', 'idx_area_id');
 CREATE INDEX `idx_area_id` ON `nodes` (`area_id`);
 
 -- locations.tow_truck_id にインデックス
-CALL DropIndexIfExists ('locations', 'idx_tow_truck_id');
+CALL DropIndexIfExists ( 'locations', 'idx_tow_truck_id' );
 CREATE INDEX `idx_tow_truck_id` ON `locations` (`tow_truck_id`);
 
 -- tow_trucks.driver_id にインデックス
@@ -27,9 +27,16 @@ CALL DropIndexIfExists ('tow_trucks', 'idx_driver_id');
 CREATE INDEX `idx_driver_id` ON `tow_trucks` (`driver_id`);
 
 -- tow_trucks の (area_id, status, driver_id) にインデックス
-CALL DropIndexIfExists ('tow_trucks', 'idx_area_id_status_driver_id');
+CALL DropIndexIfExists (
+    'tow_trucks',
+    'idx_area_id_status_driver_id'
+);
 CREATE INDEX `idx_area_id_status_driver_id` ON `tow_trucks` (
     `area_id`,
     `status`,
     `driver_id`
 );
+
+-- sessions.session_token の prefix にインデックス
+CALL DropIndexIfExists ( 'sessions', 'idx_session_token_prefix' );
+CREATE INDEX `idx_session_token_prefix` ON `sessions` (`session_token` (16));
