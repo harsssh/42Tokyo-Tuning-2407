@@ -2,20 +2,16 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use rand::Rng;
+use rand::{distributions::Alphanumeric, Rng};
 
 use crate::errors::AppError;
 
 pub fn generate_session_token() -> String {
-    let mut rng = rand::thread_rng();
-    let token: String = (0..30)
-        .map(|_| {
-            let idx = rng.gen_range(0..62);
-            let chars = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            chars[idx] as char
-        })
-        .collect();
-    token
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(30)
+        .map(char::from)
+        .collect()
 }
 
 pub fn hash_password(password: &str) -> Result<String, AppError> {
