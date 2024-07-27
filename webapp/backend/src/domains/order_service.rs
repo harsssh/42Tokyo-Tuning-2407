@@ -244,6 +244,7 @@ impl<
                 None => (None, None),
             };
 
+            // TODO: N+1
             let tow_truck = match order.tow_truck_id {
                 Some(tow_truck_id) => self
                     .tow_truck_repository
@@ -253,6 +254,7 @@ impl<
                 None => None,
             };
 
+            // TODO: N+1
             let (driver_user_id, driver_username) = match tow_truck {
                 Some(tow_truck) => (
                     Some(tow_truck.driver_id),
@@ -268,6 +270,7 @@ impl<
                 None => (None, None),
             };
 
+            // TODO: N+1
             let order_area_id = self
                 .map_repository
                 .get_area_id_by_node_id(order.node_id)
