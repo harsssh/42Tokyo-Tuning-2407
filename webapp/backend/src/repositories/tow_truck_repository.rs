@@ -96,21 +96,17 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
     async fn find_tow_truck_by_id(&self, id: i32) -> Result<Option<TowTruck>, AppError> {
         let tow_truck = sqlx::query_as::<_, TowTruck>(
             "SELECT
-                tt.id, tt.driver_id, u.username AS driver_username, tt.status, l.node_id, tt.area_id
+                tt.id, tt.driver_id, u.username AS driver_username, tt.status, tt.area_id,
+                (SELECT node_id FROM locations WHERE tow_truck_id = tt.id ORDER BY timestamp DESC LIMIT 1) AS node_id
             FROM
                 tow_trucks tt
             JOIN
                 users u
             ON
                 tt.driver_id = u.id
-            JOIN
-                locations l
-            ON
-                tt.id = l.tow_truck_id
             WHERE
                 tt.id = ?
-            AND
-                l.timestamp = (SELECT MAX(timestamp) FROM locations WHERE tow_truck_id = tt.id)",
+            "
         )
         .bind(id)
         .fetch_optional(&self.pool)
