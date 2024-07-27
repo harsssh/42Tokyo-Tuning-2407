@@ -91,8 +91,10 @@ impl<
             .get_paginated_tow_trucks(0, -1, Some("available".to_string()), Some(area_id))
             .await?;
 
-        let nodes = self.map_repository.get_all_nodes(Some(area_id)).await?;
-        let edges = self.map_repository.get_all_edges(Some(area_id)).await?;
+        let (nodes, edges) = tokio::try_join!(
+            self.map_repository.get_all_nodes(Some(area_id)),
+            self.map_repository.get_all_edges(Some(area_id))
+        )?;
 
         let mut graph = Graph::new();
         for node in nodes {
@@ -102,33 +104,19 @@ impl<
             graph.add_edge(edge);
         }
 
-        let sorted_tow_trucks_by_distance = {
-            let mut tow_trucks_with_distance: Vec<_> = tow_trucks
-                .into_par_iter()
-                .map(|truck| {
-                    let distance = calculate_distance(&graph, truck.node_id, order.node_id);
-                    (distance, truck)
-                })
-                .collect();
+        let truck_node_ids: Vec<i32> = tow_trucks.iter().map(|truck| truck.node_id).collect();
+        if let Some(id) = graph.find_closest_node(order.node_id, truck_node_ids, 10000000) {
+            // NOTE: 検索処理が負荷になるかも
+            let truck = tow_trucks
+                .par_iter()
+                .find_any(|truck| truck.node_id == id)
+                .cloned()
+                .unwrap();
 
-            tow_trucks_with_distance.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-            tow_trucks_with_distance
-        };
-
-        if sorted_tow_trucks_by_distance.is_empty() || sorted_tow_trucks_by_distance[0].0 > 10000000
-        {
-            return Ok(None);
+            let tow_truck_dto = TowTruckDto::from_entity(truck);
+            Ok(Some(tow_truck_dto))
+        } else {
+            Ok(None)
         }
-
-        let sorted_tow_truck_dtos: Vec<TowTruckDto> = sorted_tow_trucks_by_distance
-            .into_iter()
-            .map(|(_, truck)| TowTruckDto::from_entity(truck))
-            .collect();
-
-        Ok(sorted_tow_truck_dtos.first().cloned())
     }
-}
-
-fn calculate_distance(graph: &Graph, node_id_1: i32, node_id_2: i32) -> i32 {
-    graph.shortest_path(node_id_1, node_id_2)
 }

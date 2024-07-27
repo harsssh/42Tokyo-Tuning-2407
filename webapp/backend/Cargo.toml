@@ -27,6 +27,7 @@ moka = { version = "0.12.8", features = ["future"] }
 fast_image_resize = { version = "4.2.1", features = ["image"] }
 image = { version = "0.25.2", features = ["png"] }
 rayon = "1.10.0"
+tokio = { version = "1.39.2", features = ["rt", "macros", "net"] }
 
 [build-dependencies]
 syn = "1"
