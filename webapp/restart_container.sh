@@ -32,9 +32,9 @@ if [[ $HOSTNAME == app-* ]]; then
 else
     echo "ローカル環境でのコンテナ再起動を開始します。"
     # init.sh実行時には実行しない
-    # if [ -f ./../.da/.initLock ]; then
-    #     docker compose down db --volumes --rmi local --remove-orphans
-    # fi
+    if [ -f ./../.da/.initLock ]; then
+        docker compose down db --volumes --rmi local --remove-orphans
+    fi
 	docker compose -f docker-compose.local.yml up --build -d
 fi
 

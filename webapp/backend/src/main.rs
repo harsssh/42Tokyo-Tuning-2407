@@ -1,5 +1,6 @@
 use std::fs;
 use std::sync::Arc;
+use std::time::Duration;
 
 use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
@@ -12,6 +13,7 @@ use domains::{
     auth_service::AuthService, order_service::OrderService, tow_truck_service::TowTruckService,
 };
 use middlewares::auth_middleware::AuthMiddleware;
+use moka::future::Cache;
 use repositories::auth_repository::AuthRepositoryImpl;
 use repositories::map_repository::MapRepositoryImpl;
 use repositories::order_repository::OrderRepositoryImpl;
@@ -30,19 +32,25 @@ mod utils;
 async fn main() -> std::io::Result<()> {
     let pool = infrastructure::db::create_pool().await;
 
+    // NOTE: 本来は infrastructure に書く
+    let latest_location_node_id_cache = Cache::builder()
+        .max_capacity(2000)
+        .time_to_live(Duration::from_secs(300))
+        .build();
+
     let sock_path = "/tmp/da.sock";
 
     let auth_service = web::Data::new(AuthService::new(AuthRepositoryImpl::new(pool.clone())));
     let auth_service_for_middleware =
         Arc::new(AuthService::new(AuthRepositoryImpl::new(pool.clone())));
     let tow_truck_service = web::Data::new(TowTruckService::new(
-        TowTruckRepositoryImpl::new(pool.clone()),
+        TowTruckRepositoryImpl::new(pool.clone(), latest_location_node_id_cache.clone()),
         OrderRepositoryImpl::new(pool.clone()),
         MapRepositoryImpl::new(pool.clone()),
     ));
     let order_service = web::Data::new(OrderService::new(
         OrderRepositoryImpl::new(pool.clone()),
-        TowTruckRepositoryImpl::new(pool.clone()),
+        TowTruckRepositoryImpl::new(pool.clone(), latest_location_node_id_cache.clone()),
         AuthRepositoryImpl::new(pool.clone()),
         MapRepositoryImpl::new(pool.clone()),
     ));

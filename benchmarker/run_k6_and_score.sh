@@ -10,7 +10,7 @@ then
     TEAM_ID=$1
 	CLIENT_ORIGIN_URL="https://$TEAM_ID.ftt2407.dabaas.net"
 else
-	CLIENT_ORIGIN_URL="http://host.docker.internal"
+	CLIENT_ORIGIN_URL="http://nginx"
 fi
 
 if [[ -n "$2" ]];
@@ -32,7 +32,7 @@ then
     k6 run --out json=${LOG_FILE_PATH} main.js -e CLIENT_ORIGIN_URL=${CLIENT_ORIGIN_URL} -e RAW_DATA_FILE_PATH=${RAW_DATA_FILE_PATH} && \
     bash ./calculate_score.sh $LOG_FILE_PATH $SCORE_FILE_PATH $RAW_DATA_FILE_PATH $TEAM_ID
 else
-    docker run --name k6 --rm --add-host=host.docker.internal:host-gateway \
+    docker run --name k6 --rm --network webapp-network \
       -v $(pwd):/usr/src/benchmarker \
       -v /usr/src/benchmarker/node_modules \
       -it 42tokyo2407.azurecr.io/benchmarker:latest \
