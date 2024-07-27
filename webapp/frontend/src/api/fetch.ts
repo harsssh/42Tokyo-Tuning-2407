@@ -1,5 +1,5 @@
 class Fetch {
-  private static baseURL: string = process.env.API_BASE_URL || "http://host.docker.internal";
+  private static baseURL: string = process.env.API_BASE_URL || "http://nginx";
 
   private static instance: Fetch;
 
