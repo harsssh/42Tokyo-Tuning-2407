@@ -1,5 +1,6 @@
 use sqlx::FromRow;
 use std::collections::HashMap;
+use std::{cmp::Reverse, collections::BinaryHeap};
 
 #[derive(FromRow, Clone, Debug)]
 pub struct Node {
@@ -52,25 +53,31 @@ impl Graph {
 
     pub fn shortest_path(&self, from_node_id: i32, to_node_id: i32) -> i32 {
         let mut distances = HashMap::new();
-        distances.insert(from_node_id, 0);
+        let mut heap = BinaryHeap::new();
 
-        for _ in 0..self.nodes.len() {
-            for node_id in self.nodes.keys() {
-                if let Some(edges) = self.edges.get(node_id) {
-                    for edge in edges {
-                        let new_distance = distances
-                            .get(node_id)
-                            .and_then(|d: &i32| d.checked_add(edge.weight))
-                            .unwrap_or(i32::MAX);
-                        let current_distance = distances.get(&edge.node_b_id).unwrap_or(&i32::MAX);
-                        if new_distance < *current_distance {
-                            distances.insert(edge.node_b_id, new_distance);
-                        }
+        heap.push(Reverse((0, from_node_id)));
+
+        while let Some(Reverse((distance, node_id))) = heap.pop() {
+            if node_id == to_node_id {
+                return distance;
+            }
+
+            if distance >= *distances.get(&node_id).unwrap_or(&i32::MAX) {
+                continue;
+            }
+
+            distances.insert(node_id, distance);
+
+            if let Some(edges) = self.edges.get(&node_id) {
+                for edge in edges.iter() {
+                    let new_distance = distance + edge.weight;
+                    if new_distance < *distances.get(&edge.node_b_id).unwrap_or(&i32::MAX) {
+                        heap.push(Reverse((new_distance, edge.node_b_id)));
                     }
                 }
             }
         }
 
-        distances.get(&to_node_id).cloned().unwrap_or(i32::MAX)
+        i32::MAX
     }
 }
