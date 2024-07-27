@@ -11,6 +11,7 @@ pub async fn create_pool() -> MySqlPool {
 
     sqlx::mysql::MySqlPoolOptions::new()
         .max_connections(100)
+        .min_connections(30)
         .connect_with(options)
         .await
         .expect("failed to connect db")
