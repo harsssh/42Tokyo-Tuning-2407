@@ -1,5 +1,12 @@
-use log::error;
+use std::io::BufWriter;
 use std::path::{Path, PathBuf};
+
+use image::codecs::png::PngEncoder;
+use image::ImageEncoder;
+use image::ImageReader;
+
+use fast_image_resize::images::Image;
+use fast_image_resize::{IntoImageView, Resizer};
 
 use crate::errors::AppError;
 use crate::models::user::{Dispatcher, Session, User};
@@ -152,6 +159,9 @@ impl<T: AuthRepository + std::fmt::Debug> AuthService<T> {
 
     // NOTE: 戻り値は Path が適切かもしれない
     pub async fn get_resized_profile_image_path(&self, user_id: i32) -> Result<String, AppError> {
+        let icon_width = 500;
+        let icon_height = 500;
+
         let profile_image_name = match self
             .repository
             .find_profile_image_name_by_user_id(user_id)
@@ -165,32 +175,49 @@ impl<T: AuthRepository + std::fmt::Debug> AuthService<T> {
         let path: PathBuf =
             Path::new(&format!("images/user_profile/{}", profile_image_name)).to_path_buf();
 
-        let output_path = Path::new(&format!(
-            "images/user_profile/resized_{}",
-            profile_image_name
-        ))
-        .to_path_buf();
-        let redirect_path = format!("/protected/resized_{}", profile_image_name);
+        // 画像サイズを含むファイル名でリサイズ済み画像を保存
+        let output_name = format!(
+            "resized_{}_{}_{}",
+            icon_width, icon_height, profile_image_name
+        );
+        let output_path = Path::new(&format!("images/user_profile/{}", output_name)).to_path_buf();
+        let redirect_path = format!("/protected/{}", output_name);
 
         // 既にリサイズ済みの画像が存在するか確認
         if output_path.exists() {
             return Ok(redirect_path);
         }
 
-        let img = image::open(path).map_err(|e| {
-            error!("画像ファイルの読み込みに失敗しました: {:?}", e);
-            AppError::InternalServerError
-        })?;
-
-        let resized = img.resize(500, 500, image::imageops::FilterType::Lanczos3);
-
-        resized.save(&output_path).map_err(|e| {
-            error!("画像ファイルの保存に失敗しました: {:?}", e);
-            AppError::InternalServerError
-        })?;
+        self.resize_and_save_image(&path, &output_path, icon_width, icon_height)
+            .await?;
 
         // X-Accel-Redirect で画像を返すので、パスだけ渡す
         Ok(redirect_path)
+    }
+
+    // NOTE: エラーハンドリングをさぼってる
+    async fn resize_and_save_image(
+        &self,
+        path: &Path,
+        output_path: &Path,
+        width: u32,
+        height: u32,
+    ) -> Result<(), AppError> {
+        let src_image = ImageReader::open(path).unwrap().decode().unwrap();
+
+        let mut dst_image = Image::new(width, height, src_image.pixel_type().unwrap());
+
+        let mut resizer = Resizer::new();
+        resizer.resize(&src_image, &mut dst_image, None).unwrap();
+
+        let mut result_buf = BufWriter::new(Vec::new());
+        PngEncoder::new(&mut result_buf)
+            .write_image(dst_image.buffer(), width, height, src_image.color().into())
+            .unwrap();
+
+        std::fs::write(output_path, result_buf.get_ref()).unwrap();
+
+        Ok(())
     }
 
     pub async fn validate_session(&self, session_token: &str) -> Result<bool, AppError> {
