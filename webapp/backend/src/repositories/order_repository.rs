@@ -42,7 +42,6 @@ impl OrderRepository for OrderRepositoryImpl {
         Ok(())
     }
 
-    // TODO: クエリ改善
     async fn get_paginated_orders(
         &self,
         page: i32,
