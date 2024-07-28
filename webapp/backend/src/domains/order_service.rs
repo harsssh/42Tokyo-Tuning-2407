@@ -89,31 +89,49 @@ impl<
     pub async fn get_order_by_id(&self, id: i32) -> Result<OrderDto, AppError> {
         let order = self.order_repository.find_order_by_id(id).await?;
 
-        let client_username = self
-            .auth_repository
-            .find_user_by_id(order.client_id)
-            .await
-            .unwrap()
-            .unwrap()
-            .username;
+        let client_username_future = self.auth_repository.find_user_by_id(order.client_id);
 
-        let dispatcher = match order.dispatcher_id {
-            Some(dispatcher_id) => self
-                .auth_repository
-                .find_dispatcher_by_id(dispatcher_id)
-                .await
-                .unwrap(),
-            None => None,
+        let dispatcher_future = async {
+            match order.dispatcher_id {
+                Some(dispatcher_id) => {
+                    self.auth_repository
+                        .find_dispatcher_by_id(dispatcher_id)
+                        .await
+                }
+                None => Ok(None),
+            }
         };
 
+        let tow_truck_future = async {
+            match order.tow_truck_id {
+                Some(tow_truck_id) => {
+                    self.tow_truck_repository
+                        .find_tow_truck_by_id(tow_truck_id)
+                        .await
+                }
+                None => Ok(None),
+            }
+        };
+
+        let area_id_future = self.map_repository.get_area_id_by_node_id(order.node_id);
+
+        let (client_username_res, dispatcher_res, tow_truck_res, area_id) = tokio::join!(
+            client_username_future,
+            dispatcher_future,
+            tow_truck_future,
+            area_id_future
+        );
+
+        let client_username = client_username_res?.unwrap().username;
+
+        let dispatcher = dispatcher_res?;
         let (dispatcher_user_id, dispatcher_username) = match dispatcher {
             Some(dispatcher) => (
                 Some(dispatcher.user_id),
                 Some(
                     self.auth_repository
                         .find_user_by_id(dispatcher.user_id)
-                        .await
-                        .unwrap()
+                        .await?
                         .unwrap()
                         .username,
                 ),
@@ -121,35 +139,19 @@ impl<
             None => (None, None),
         };
 
-        let tow_truck = match order.tow_truck_id {
-            Some(tow_truck_id) => self
-                .tow_truck_repository
-                .find_tow_truck_by_id(tow_truck_id)
-                .await
-                .unwrap(),
-            None => None,
-        };
-
-        let (driver_user_id, driver_username) = match tow_truck {
+        let (driver_user_id, driver_username) = match tow_truck_res? {
             Some(tow_truck) => (
                 Some(tow_truck.driver_id),
                 Some(
                     self.auth_repository
                         .find_user_by_id(tow_truck.driver_id)
-                        .await
-                        .unwrap()
+                        .await?
                         .unwrap()
                         .username,
                 ),
             ),
             None => (None, None),
         };
-
-        let area_id = self
-            .map_repository
-            .get_area_id_by_node_id(order.node_id)
-            .await
-            .unwrap();
 
         Ok(OrderDto {
             id: order.id,
@@ -159,7 +161,7 @@ impl<
             dispatcher_username,
             driver_user_id,
             driver_username,
-            area_id,
+            area_id: area_id?,
             dispatcher_id: order.dispatcher_id,
             tow_truck_id: order.tow_truck_id,
             status: order.status,
