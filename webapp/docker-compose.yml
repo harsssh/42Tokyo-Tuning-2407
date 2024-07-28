@@ -11,7 +11,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - user-icons:/usr/local/bin/images
+      # - user-icons:/usr/local/bin/images
       - mysql-socket:/var/run/mysqld
       - app-socket:/tmp
     healthcheck:
@@ -66,7 +66,7 @@ services:
       - ./mysql/init:/docker-entrypoint-initdb.d
       - ./mysql/conf.d:/etc/mysql/conf.d
       - ./mysql/migration:/etc/mysql/migration
-      - mysql-logs:/var/log/mysql
+      # - mysql-logs:/var/log/mysql
       - mysql-socket:/var/run/mysqld
     networks:
       - webapp-network
@@ -87,9 +87,9 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - /da/tls:/da/tls:ro
-      - nginx-logs:/var/log/nginx
+      # - nginx-logs:/var/log/nginx
       - frontend-files:/usr/src/frontend
-      - user-icons:/usr/local/bin/images
+      # - user-icons:/usr/local/bin/images
       - app-socket:/tmp
     tmpfs:
       - /var/cache/nginx
@@ -102,18 +102,18 @@ services:
         condition: service_healthy
 
   ### 以下、計測用 ###
-  pprotein:
-    container_name: pprotein
-    restart: unless-stopped
-    build:
-      context: pprotein
-      dockerfile: Dockerfile
-    ports:
-      - 9000:9000
-    volumes:
-      - ./pprotein/data:/opt/pprotein/data
-      - nginx-logs:/var/log/nginx
-      - mysql-logs:/var/log/mysql
+  # pprotein:
+  #   container_name: pprotein
+  #   restart: unless-stopped
+  #   build:
+  #     context: pprotein
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - 9000:9000
+  #   volumes:
+  #     - ./pprotein/data:/opt/pprotein/data
+  #     - nginx-logs:/var/log/nginx
+  #     - mysql-logs:/var/log/mysql
 
   # nginx-exporter:
   #   image: nginx/nginx-prometheus-exporter
@@ -183,10 +183,10 @@ networks:
 volumes:
   app-socket:
   mysql-socket:
-  user-icons: # external でもいいかも
+  # user-icons: # external でもいいかも
   frontend-files:
-  nginx-logs:
-    external: true
-  mysql-logs:
-    external: true
-  grafana-storage:
+  # nginx-logs:
+  #   external: true
+  # mysql-logs:
+  #   external: true
+  # grafana-storage:
