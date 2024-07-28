@@ -10,7 +10,7 @@ fi
 
 PREVIOUS_REMAINING=""
 
-FLAG=0
+# FLAG=0
 
 while true; do
     RESPONSE=$(curl -s -G --resolve stress.ftt2407.dabaas.net:443:$IP_ADDRESS https://stress.ftt2407.dabaas.net/api/get_status --data-urlencode "jobId=$JOB_ID")
@@ -32,10 +32,10 @@ while true; do
             ;;
         "running")
 
-            if [ $FLAG -eq 0 ]; then
-                curl localhost:9000/api/group/collect
-                FLAG=1
-            fi
+            # if [ $FLAG -eq 0 ]; then
+            #     curl localhost:9000/api/group/collect
+            #     FLAG=1
+            # fi
 
             PROGRESS=$(echo "$RESPONSE" | jq -r '.progress')
 
