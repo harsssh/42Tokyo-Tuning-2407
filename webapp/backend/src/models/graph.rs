@@ -66,6 +66,7 @@ impl Graph {
         heap.push(Reverse((0, from_node_id)));
 
         while let Some(Reverse((distance, node_id))) = heap.pop() {
+            // NOTE: キャッシュがあるとは限らない
             if goals.contains(&node_id) && !is_truck_busy_cache.get(&node_id).await.unwrap_or(false)
             {
                 return Some(node_id);
