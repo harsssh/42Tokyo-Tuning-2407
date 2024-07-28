@@ -7,19 +7,13 @@ use sqlx::mysql::MySqlPool;
 #[derive(Debug)]
 pub struct TowTruckRepositoryImpl {
     pool: MySqlPool,
-    latest_location_node_id_cache: Cache<i32, i32>,
     is_truck_busy_cache: Cache<i32, bool>,
 }
 
 impl TowTruckRepositoryImpl {
-    pub fn new(
-        pool: MySqlPool,
-        latest_location_node_id_cache: Cache<i32, i32>,
-        is_truck_busy_cache: Cache<i32, bool>,
-    ) -> Self {
+    pub fn new(pool: MySqlPool, is_truck_busy_cache: Cache<i32, bool>) -> Self {
         TowTruckRepositoryImpl {
             pool,
-            latest_location_node_id_cache,
             is_truck_busy_cache,
         }
     }
@@ -97,10 +91,6 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
     }
 
     async fn update_location(&self, tow_truck_id: i32, node_id: i32) -> Result<(), AppError> {
-        self.latest_location_node_id_cache
-            .insert(tow_truck_id, node_id)
-            .await;
-
         sqlx::query("INSERT INTO locations (tow_truck_id, node_id) VALUES (?, ?)")
             .bind(tow_truck_id)
             .bind(node_id)
@@ -127,7 +117,7 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
         let tow_truck = sqlx::query_as::<_, TowTruck>(
             "SELECT
                 tt.id, tt.driver_id, u.username AS driver_username, tt.status, tt.area_id,
-                1 AS node_id
+                (SELECT node_id FROM locations WHERE tow_truck_id = tt.id ORDER BY timestamp DESC LIMIT 1) AS node_id
             FROM
                 tow_trucks tt
             JOIN
@@ -142,29 +132,6 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
         .fetch_optional(&self.pool)
         .await?;
 
-        if let Some(mut tow_truck) = tow_truck {
-            self.is_truck_busy_cache
-                .insert(tow_truck.id, tow_truck.status == "busy")
-                .await;
-
-            // NOTE: エラーハンドリングをちゃんとやる
-            let node_id = self.latest_location_node_id_cache
-            .try_get_with(tow_truck.id, async {
-                let node_id = sqlx::query_scalar::<_, i32>(
-                    "SELECT node_id FROM locations WHERE tow_truck_id = ? ORDER BY timestamp DESC LIMIT 1"
-                )
-                .bind(tow_truck.id)
-                .fetch_one(&self.pool)
-                .await?;
-                Ok::<_, sqlx::Error>(node_id)
-            })
-            .await
-            .map_err(|_| AppError::InternalServerError)?;
-
-            tow_truck.node_id = node_id;
-            Ok(Some(tow_truck))
-        } else {
-            Ok(None)
-        }
+        Ok(tow_truck)
     }
 }
