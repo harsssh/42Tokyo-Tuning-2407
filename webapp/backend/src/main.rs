@@ -38,8 +38,8 @@ async fn main() -> std::io::Result<()> {
         .time_to_live(Duration::from_secs(300))
         .build();
     let is_truck_busy_cache = Cache::builder()
-        .max_capacity(2000)
-        .time_to_live(Duration::from_secs(300))
+        .max_capacity(5000)
+        .time_to_live(Duration::from_secs(600))
         .build();
 
     let sock_path = "/tmp/da.sock";
@@ -178,5 +178,5 @@ async fn main() -> std::io::Result<()> {
     fs::set_permissions(sock_path, perm)?;
 
     // TODO: 最適値を考える
-    server.workers(8).backlog(256).run().await
+    server.workers(4).backlog(256).run().await
 }
