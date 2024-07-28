@@ -37,6 +37,10 @@ async fn main() -> std::io::Result<()> {
         .max_capacity(2000)
         .time_to_live(Duration::from_secs(300))
         .build();
+    let is_truck_busy_cache = Cache::builder()
+        .max_capacity(2000)
+        .time_to_live(Duration::from_secs(300))
+        .build();
 
     let sock_path = "/tmp/da.sock";
 
@@ -44,13 +48,21 @@ async fn main() -> std::io::Result<()> {
     let auth_service_for_middleware =
         Arc::new(AuthService::new(AuthRepositoryImpl::new(pool.clone())));
     let tow_truck_service = web::Data::new(TowTruckService::new(
-        TowTruckRepositoryImpl::new(pool.clone(), latest_location_node_id_cache.clone()),
+        TowTruckRepositoryImpl::new(
+            pool.clone(),
+            latest_location_node_id_cache.clone(),
+            is_truck_busy_cache.clone(),
+        ),
         OrderRepositoryImpl::new(pool.clone()),
         MapRepositoryImpl::new(pool.clone()),
     ));
     let order_service = web::Data::new(OrderService::new(
         OrderRepositoryImpl::new(pool.clone()),
-        TowTruckRepositoryImpl::new(pool.clone(), latest_location_node_id_cache.clone()),
+        TowTruckRepositoryImpl::new(
+            pool.clone(),
+            latest_location_node_id_cache.clone(),
+            is_truck_busy_cache.clone(),
+        ),
         AuthRepositoryImpl::new(pool.clone()),
         MapRepositoryImpl::new(pool.clone()),
     ));
