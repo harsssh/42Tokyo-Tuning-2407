@@ -1,29 +1,20 @@
 use crate::domains::tow_truck_service::TowTruckRepository;
 use crate::errors::AppError;
 use crate::models::tow_truck::TowTruck;
-use moka::future::Cache;
 use sqlx::mysql::MySqlPool;
 
 #[derive(Debug)]
 pub struct TowTruckRepositoryImpl {
     pool: MySqlPool,
-    is_truck_busy_cache: Cache<i32, bool>,
 }
 
 impl TowTruckRepositoryImpl {
-    pub fn new(pool: MySqlPool, is_truck_busy_cache: Cache<i32, bool>) -> Self {
-        TowTruckRepositoryImpl {
-            pool,
-            is_truck_busy_cache,
-        }
+    pub fn new(pool: MySqlPool) -> Self {
+        TowTruckRepositoryImpl { pool }
     }
 }
 
 impl TowTruckRepository for TowTruckRepositoryImpl {
-    fn get_is_busy_cache(&self) -> Cache<i32, bool> {
-        self.is_truck_busy_cache.clone()
-    }
-
     async fn get_paginated_tow_trucks(
         &self,
         page: i32,
@@ -81,12 +72,6 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
             .fetch_all(&self.pool)
             .await?;
 
-        for tt in tow_trucks.iter() {
-            self.is_truck_busy_cache
-                .insert(tt.id, tt.status == "busy")
-                .await;
-        }
-
         Ok(tow_trucks)
     }
 
@@ -105,10 +90,6 @@ impl TowTruckRepository for TowTruckRepositoryImpl {
             .bind(tow_truck_id)
             .execute(&self.pool)
             .await?;
-
-        self.is_truck_busy_cache
-            .insert(tow_truck_id, status == "busy")
-            .await;
 
         Ok(())
     }

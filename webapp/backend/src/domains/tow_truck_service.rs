@@ -1,4 +1,3 @@
-use moka::future::Cache;
 use rayon::prelude::*;
 
 use super::dto::tow_truck::TowTruckDto;
@@ -19,8 +18,6 @@ pub trait TowTruckRepository {
     async fn update_location(&self, truck_id: i32, node_id: i32) -> Result<(), AppError>;
     async fn update_status(&self, truck_id: i32, status: &str) -> Result<(), AppError>;
     async fn find_tow_truck_by_id(&self, id: i32) -> Result<Option<TowTruck>, AppError>;
-    // 最悪のコード
-    fn get_is_busy_cache(&self) -> Cache<i32, bool>;
 }
 
 #[derive(Debug)]
@@ -108,10 +105,8 @@ impl<
         }
 
         let truck_node_ids: Vec<i32> = tow_trucks.iter().map(|truck| truck.node_id).collect();
-        // よくないコード
-        let cache = self.tow_truck_repository.get_is_busy_cache();
         if let Some(id) = graph
-            .find_closest_node(order.node_id, truck_node_ids, 10000000, cache)
+            .find_closest_node(order.node_id, truck_node_ids, 10000000)
             .await
         {
             // NOTE: 検索処理が負荷になるかも

@@ -1,4 +1,3 @@
-use moka::future::Cache;
 use sqlx::FromRow;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::{cmp::Reverse, collections::BinaryHeap};
@@ -58,7 +57,6 @@ impl Graph {
         from_node_id: i32,
         to_node_ids: Vec<i32>,
         limit: i32,
-        is_truck_busy_cache: Cache<i32, bool>,
     ) -> Option<i32> {
         let goals: HashSet<_> = to_node_ids.iter().collect();
         let mut distances = BTreeMap::new();
@@ -66,9 +64,7 @@ impl Graph {
         heap.push(Reverse((0, from_node_id)));
 
         while let Some(Reverse((distance, node_id))) = heap.pop() {
-            // NOTE: キャッシュがあるとは限らない
-            if goals.contains(&node_id) && !is_truck_busy_cache.get(&node_id).await.unwrap_or(false)
-            {
+            if goals.contains(&node_id) {
                 return Some(node_id);
             }
 
